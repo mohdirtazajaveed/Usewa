@@ -99,6 +99,8 @@ export default function BookingScreen() {
 
   useEffect(() => {
     setSubmitting(false);
+    setSelectedDate(days[0].value);
+    setSelectedSlot(null);
   }, [providerId]);
 
   const days = getNextSevenDays();

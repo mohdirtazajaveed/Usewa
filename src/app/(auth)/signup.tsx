@@ -10,6 +10,25 @@ import { ThemedText } from '@/components/themed-text';
 import { colors, spacing, radius, typography, cardShadow } from '@/constants/design';
 import { auth, db } from '@/lib/firebase';
 
+// Writes the user's profile doc, retrying once if the first attempt fails
+// (e.g. a transient network blip right after signup). Never throws — a
+// failed profile write should not block the user from being signed in.
+async function createUserProfileDocument(uid: string, profile: { name: string; email: string }) {
+  const userRef = doc(db, 'users', uid);
+  const payload = { ...profile, createdAt: serverTimestamp() };
+
+  try {
+    await setDoc(userRef, payload);
+  } catch (firstError) {
+    console.error('Failed to create user profile document, retrying once:', firstError);
+    try {
+      await setDoc(userRef, payload);
+    } catch (secondError) {
+      console.error('Failed to create user profile document after retry:', secondError);
+    }
+  }
+}
+
 export default function SignupScreen() {
   const router = useRouter();
 
@@ -34,18 +53,10 @@ export default function SignupScreen() {
 
       await updateProfile(user, { displayName: name.trim() });
 
-      // Create the user's profile document. If this fails, the auth
-      // account still exists and is valid — we don't block the user,
-      // we just log it for debugging.
-      try {
-        await setDoc(doc(db, 'users', user.uid), {
-          name: name.trim(),
-          email: email.trim(),
-          createdAt: serverTimestamp(),
-        });
-      } catch (profileError) {
-        console.error('Failed to create user profile document:', profileError);
-      }
+      // Create the user's profile document. If this fails (even after a
+      // retry), the auth account still exists and is valid — we don't
+      // block the user, we just log it for debugging.
+      await createUserProfileDocument(user.uid, { name: name.trim(), email: email.trim() });
 
       router.replace('/(tabs)/home');
     } catch (error: any) {

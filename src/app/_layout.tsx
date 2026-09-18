@@ -1,60 +1,52 @@
-import { Tabs } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { Stack } from 'expo-router';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-export default function TabsLayout() {
+import { colors, radius, spacing, typography } from '@/constants/design';
+
+export default function RootLayout() {
+  return <Stack screenOptions={{ headerShown: false }} />;
+}
+
+export function ErrorBoundary({ error, retry }: { error: Error; retry: () => void }) {
   return (
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-        tabBarActiveTintColor: '#0B5FFF',
-        tabBarInactiveTintColor: '#9AA5B1',
-        tabBarStyle: {
-          borderTopColor: '#EAECF0',
-          height: 60,
-          paddingBottom: 8,
-          paddingTop: 8,
-        },
-        tabBarLabelStyle: {
-          fontSize: 12,
-          fontWeight: '600',
-        },
-      }}>
-      <Tabs.Screen
-        name="home"
-        options={{
-          title: 'Home',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="home" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="search"
-        options={{
-          title: 'Search',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="search" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="bookings"
-        options={{
-          title: 'Bookings',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="calendar" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: 'Profile',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="person" size={size} color={color} />
-          ),
-        }}
-      />
-    </Tabs>
+    <View style={errorStyles.container}>
+      <Text style={errorStyles.title}>Something went wrong.</Text>
+      <Text style={errorStyles.message}>{error.message}</Text>
+      <TouchableOpacity style={errorStyles.button} activeOpacity={0.85} onPress={retry}>
+        <Text style={errorStyles.buttonText}>Try Again</Text>
+      </TouchableOpacity>
+    </View>
   );
 }
+
+const errorStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: spacing.xxl,
+    backgroundColor: colors.background,
+  },
+  title: {
+    ...typography.h3,
+    color: colors.textPrimary,
+    marginBottom: spacing.sm,
+    textAlign: 'center',
+  },
+  message: {
+    ...typography.body,
+    color: colors.textTertiary,
+    textAlign: 'center',
+    marginBottom: spacing.xl,
+  },
+  button: {
+    backgroundColor: colors.primary,
+    borderRadius: radius.md,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.xxl,
+  },
+  buttonText: {
+    ...typography.bodyBold,
+    color: '#FFFFFF',
+  },
+});

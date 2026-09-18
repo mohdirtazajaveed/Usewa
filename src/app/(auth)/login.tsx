@@ -38,6 +38,8 @@ export default function LoginScreen() {
         setErrorMessage('Incorrect email or password.');
       } else if (error.code === 'auth/invalid-email') {
         setErrorMessage('Please enter a valid email address.');
+      } else if (error.code === 'auth/network-request-failed') {
+        setErrorMessage('No internet connection. Please try again.');
       } else {
         setErrorMessage('Something went wrong. Please try again.');
       }

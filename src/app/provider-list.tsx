@@ -80,6 +80,10 @@ export default function ProviderListScreen() {
   };
 
   const goBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+      return;
+    }
     if (from === 'home') {
       router.replace('/home');
       return;

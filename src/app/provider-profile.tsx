@@ -99,6 +99,10 @@ export default function ProviderProfileScreen() {
 
   // Return to wherever the user actually came from; Home if unknown
   const goBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+      return;
+    }
     if (from === 'search') {
       router.navigate('/search');
       return;

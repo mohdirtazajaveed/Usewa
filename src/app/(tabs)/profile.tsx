@@ -6,7 +6,7 @@ import { Alert, Linking, StyleSheet, TouchableOpacity, View } from 'react-native
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
-import { colors, spacing } from '@/constants/design';
+import { colors, spacing, typography } from '@/constants/design';
 import { auth } from '@/lib/firebase';
 
 const SUPPORT_EMAIL = 'support@u-sewa.in';
@@ -82,7 +82,7 @@ export default function ProfileScreen() {
           >
             <Ionicons name={item.icon as any} size={20} color={colors.textSecondary} />
             <ThemedText style={styles.menuLabel}>{item.label}</ThemedText>
-            <Ionicons name="chevron-forward" size={18} color="#D0D5DD" />
+            <Ionicons name="chevron-forward" size={18} color={colors.textPlaceholder} />
           </TouchableOpacity>
         ))}
       </View>
@@ -112,12 +112,11 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   name: {
-    fontSize: 18,
-    fontWeight: '700',
+    ...typography.h3,
     color: colors.textPrimary,
   },
   email: {
-    fontSize: 13,
+    ...typography.body,
     color: colors.textTertiary,
     marginTop: 2,
   },
