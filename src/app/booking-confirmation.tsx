@@ -21,6 +21,8 @@ export default function BookingConfirmationScreen() {
   const [providerName, setProviderName] = useState('');
   const [categoryName, setCategoryName] = useState('');
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const [retryKey, setRetryKey] = useState(0);
 
   // Guards against writing the booking twice for the SAME booking attempt
   // (re-renders), while still allowing a fresh write when the user makes
@@ -36,10 +38,12 @@ export default function BookingConfirmationScreen() {
       lastWrittenKey.current = bookingKey;
 
       setLoading(true);
+      setError(false);
 
       try {
         const providerDoc = await getDoc(doc(db, 'providers', providerId));
         if (!providerDoc.exists()) {
+          setError(true);
           setLoading(false);
           return;
         }
@@ -53,6 +57,7 @@ export default function BookingConfirmationScreen() {
 
         const user = auth.currentUser;
         if (!user) {
+          setError(true);
           setLoading(false);
           return;
         }
@@ -68,15 +73,21 @@ export default function BookingConfirmationScreen() {
           status: 'pending',
           createdAt: serverTimestamp(),
         });
-      } catch (error) {
-        console.error('Failed to create booking:', error);
+      } catch (err) {
+        console.error('Failed to create booking:', err);
+        setError(true);
       } finally {
         setLoading(false);
       }
     }
 
     createBooking();
-  }, [providerId, date, slot]);
+  }, [providerId, date, slot, retryKey]);
+
+  const retryBooking = () => {
+    lastWrittenKey.current = null;
+    setRetryKey((current) => current + 1);
+  };
 
   if (loading) {
     return (
@@ -84,6 +95,35 @@ export default function BookingConfirmationScreen() {
         <Stack.Screen options={{ headerShown: false }} />
         <View style={styles.loadingState}>
           <ActivityIndicator size="large" color={colors.primary} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (error) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <Stack.Screen options={{ headerShown: false }} />
+
+        <View style={styles.content}>
+          <View style={styles.errorIcon}>
+            <Ionicons name="close" size={48} color="#FFFFFF" />
+          </View>
+
+          <ThemedText style={styles.title}>Booking Failed</ThemedText>
+          <ThemedText style={styles.subtitle}>
+            We couldn't confirm your booking. Please try again.
+          </ThemedText>
+        </View>
+
+        <View style={styles.bottomBar}>
+          <TouchableOpacity
+            style={styles.homeButton}
+            activeOpacity={0.85}
+            onPress={retryBooking}
+          >
+            <ThemedText style={styles.homeButtonText}>Try Again</ThemedText>
+          </TouchableOpacity>
         </View>
       </SafeAreaView>
     );
@@ -165,6 +205,18 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xl,
     ...cardShadow,
     shadowColor: colors.success,
+    shadowOpacity: 0.25,
+  },
+  errorIcon: {
+    width: 92,
+    height: 92,
+    borderRadius: 46,
+    backgroundColor: colors.danger,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.xl,
+    ...cardShadow,
+    shadowColor: colors.danger,
     shadowOpacity: 0.25,
   },
   title: {

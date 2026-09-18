@@ -52,10 +52,13 @@ export default function BookingScreen() {
   const [provider, setProvider] = useState<Provider | null>(null);
   const [categoryName, setCategoryName] = useState('');
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const [retryKey, setRetryKey] = useState(0);
 
   useEffect(() => {
     let active = true;
     setLoading(true);
+    setError(false);
     setProvider(null);
     setCategoryName('');
 
@@ -76,8 +79,9 @@ export default function BookingScreen() {
             setCategoryName(categoryDoc.data().name);
           }
         }
-      } catch (error) {
-        console.error('Failed to fetch provider:', error);
+      } catch (err) {
+        console.error('Failed to fetch provider:', err);
+        if (active) setError(true);
       } finally {
         if (active) setLoading(false);
       }
@@ -87,7 +91,11 @@ export default function BookingScreen() {
     return () => {
       active = false;
     };
-  }, [providerId]);
+  }, [providerId, retryKey]);
+
+  const retryFetch = () => {
+    setRetryKey((current) => current + 1);
+  };
 
   useEffect(() => {
     setSubmitting(false);
@@ -135,6 +143,18 @@ export default function BookingScreen() {
       {loading ? (
         <View style={styles.loadingState}>
           <ActivityIndicator size="large" color={colors.primary} />
+        </View>
+      ) : error ? (
+        <View style={styles.loadingState}>
+          <View style={styles.emptyIconBox}>
+            <Ionicons name="cloud-offline-outline" size={28} color={colors.textPlaceholder} />
+          </View>
+          <ThemedText style={styles.emptyText}>
+            We couldn't load this provider. Please try again.
+          </ThemedText>
+          <TouchableOpacity onPress={retryFetch} activeOpacity={0.7} style={styles.retryButton}>
+            <ThemedText style={styles.retryText}>Retry</ThemedText>
+          </TouchableOpacity>
         </View>
       ) : (
         <>
@@ -257,6 +277,28 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingHorizontal: spacing.xxxl,
+  },
+  emptyIconBox: {
+    width: 64,
+    height: 64,
+    borderRadius: radius.pill,
+    backgroundColor: colors.borderLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.lg,
+  },
+  emptyText: {
+    ...typography.body,
+    color: colors.textTertiary,
+    textAlign: 'center',
+  },
+  retryButton: {
+    marginTop: spacing.md,
+  },
+  retryText: {
+    ...typography.bodyBold,
+    color: colors.primary,
   },
   providerCard: {
     flexDirection: 'row',

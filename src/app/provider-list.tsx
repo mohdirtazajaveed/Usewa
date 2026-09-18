@@ -23,10 +23,13 @@ export default function ProviderListScreen() {
   const [providers, setProviders] = useState<Provider[]>([]);
   const [categoryName, setCategoryName] = useState('');
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const [retryKey, setRetryKey] = useState(0);
 
   useEffect(() => {
     let active = true;
     setLoading(true);
+    setError(false);
     setProviders([]);
     setCategoryName('');
 
@@ -58,8 +61,9 @@ export default function ProviderListScreen() {
           rating: d.data().rating,
         }));
         if (active) setProviders(results);
-      } catch (error) {
-        console.error('Failed to fetch providers:', error);
+      } catch (err) {
+        console.error('Failed to fetch providers:', err);
+        if (active) setError(true);
       } finally {
         if (active) setLoading(false);
       }
@@ -69,7 +73,11 @@ export default function ProviderListScreen() {
     return () => {
       active = false;
     };
-  }, [category]);
+  }, [category, retryKey]);
+
+  const retryFetch = () => {
+    setRetryKey((current) => current + 1);
+  };
 
   const goBack = () => {
     if (from === 'home') {
@@ -102,7 +110,19 @@ export default function ProviderListScreen() {
         </View>
       ) : (
         <ScrollView showsVerticalScrollIndicator={false}>
-          {providers.length === 0 ? (
+          {error ? (
+            <View style={styles.emptyState}>
+              <View style={styles.emptyIconBox}>
+                <Ionicons name="cloud-offline-outline" size={28} color={colors.textPlaceholder} />
+              </View>
+              <ThemedText style={styles.emptyText}>
+                We couldn't load providers. Please try again.
+              </ThemedText>
+              <TouchableOpacity onPress={retryFetch} activeOpacity={0.7} style={styles.retryButton}>
+                <ThemedText style={styles.retryText}>Retry</ThemedText>
+              </TouchableOpacity>
+            </View>
+          ) : providers.length === 0 ? (
             <View style={styles.emptyState}>
               <View style={styles.emptyIconBox}>
                 <Ionicons name="search" size={28} color={colors.textPlaceholder} />
@@ -195,6 +215,13 @@ const styles = StyleSheet.create({
     ...typography.body,
     color: colors.textTertiary,
     textAlign: 'center',
+  },
+  retryButton: {
+    marginTop: spacing.md,
+  },
+  retryText: {
+    ...typography.bodyBold,
+    color: colors.primary,
   },
   list: {
     paddingHorizontal: spacing.lg,

@@ -25,9 +25,12 @@ export default function SearchScreen() {
   const [providers, setProviders] = useState<Provider[]>([]);
   const [categoryNames, setCategoryNames] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const [retryKey, setRetryKey] = useState(0);
 
   useEffect(() => {
     async function fetchData() {
+      setError(false);
       try {
         const [categoriesSnap, providersSnap] = await Promise.all([
           getCategories(),
@@ -50,15 +53,21 @@ export default function SearchScreen() {
           rating: d.data().rating,
         }));
         setProviders(providerResults);
-      } catch (error) {
-        console.error('Failed to fetch search data:', error);
+      } catch (err) {
+        console.error('Failed to fetch search data:', err);
+        setError(true);
       } finally {
         setLoading(false);
       }
     }
 
     fetchData();
-  }, []);
+  }, [retryKey]);
+
+  const retrySearch = () => {
+    setLoading(true);
+    setRetryKey((current) => current + 1);
+  };
 
   const trimmedQuery = query.trim().toLowerCase();
 
@@ -100,6 +109,18 @@ export default function SearchScreen() {
       {loading ? (
         <View style={styles.centerState}>
           <ActivityIndicator size="large" color={colors.primary} />
+        </View>
+      ) : error ? (
+        <View style={styles.centerState}>
+          <View style={styles.emptyIconBox}>
+            <Ionicons name="cloud-offline-outline" size={40} color={colors.textPlaceholder} />
+          </View>
+          <ThemedText style={styles.emptyText}>
+            We couldn't load search data. Please try again.
+          </ThemedText>
+          <TouchableOpacity onPress={retrySearch} activeOpacity={0.7} style={styles.retryButton}>
+            <ThemedText style={styles.retryText}>Retry</ThemedText>
+          </TouchableOpacity>
         </View>
       ) : !trimmedQuery ? (
         <View style={styles.centerState}>
@@ -223,6 +244,13 @@ const styles = StyleSheet.create({
     ...typography.body,
     color: colors.textTertiary,
     textAlign: 'center',
+  },
+  retryButton: {
+    marginTop: spacing.md,
+  },
+  retryText: {
+    ...typography.bodyBold,
+    color: colors.primary,
   },
   results: {
     paddingHorizontal: spacing.xl,

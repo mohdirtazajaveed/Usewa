@@ -12,21 +12,30 @@ export default function CategoriesScreen() {
   const router = useRouter();
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const [retryKey, setRetryKey] = useState(0);
 
   useEffect(() => {
     async function fetchCategories() {
+      setError(false);
       try {
         const results = await getCategories();
         setCategories(results);
-      } catch (error) {
-        console.error('Failed to fetch categories:', error);
+      } catch (err) {
+        console.error('Failed to fetch categories:', err);
+        setError(true);
       } finally {
         setLoading(false);
       }
     }
 
     fetchCategories();
-  }, []);
+  }, [retryKey]);
+
+  const retryFetch = () => {
+    setLoading(true);
+    setRetryKey((current) => current + 1);
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -44,6 +53,18 @@ export default function CategoriesScreen() {
       {loading ? (
         <View style={styles.loadingState}>
           <ActivityIndicator size="large" color={colors.primary} />
+        </View>
+      ) : error ? (
+        <View style={styles.loadingState}>
+          <View style={styles.emptyIconBox}>
+            <Ionicons name="cloud-offline-outline" size={28} color={colors.textPlaceholder} />
+          </View>
+          <ThemedText style={styles.emptyText}>
+            We couldn't load categories. Please try again.
+          </ThemedText>
+          <TouchableOpacity onPress={retryFetch} activeOpacity={0.7} style={styles.retryButton}>
+            <ThemedText style={styles.retryText}>Retry</ThemedText>
+          </TouchableOpacity>
         </View>
       ) : (
         <ScrollView showsVerticalScrollIndicator={false}>
@@ -98,6 +119,28 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingHorizontal: spacing.xxxl,
+  },
+  emptyIconBox: {
+    width: 64,
+    height: 64,
+    borderRadius: radius.pill,
+    backgroundColor: colors.borderLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.lg,
+  },
+  emptyText: {
+    ...typography.body,
+    color: colors.textTertiary,
+    textAlign: 'center',
+  },
+  retryButton: {
+    marginTop: spacing.md,
+  },
+  retryText: {
+    ...typography.bodyBold,
+    color: colors.primary,
   },
   grid: {
     flexDirection: 'row',

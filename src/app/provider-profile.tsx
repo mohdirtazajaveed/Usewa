@@ -37,6 +37,8 @@ export default function ProviderProfileScreen() {
   const [provider, setProvider] = useState<Provider | null>(null);
   const [categoryName, setCategoryName] = useState('');
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const [retryKey, setRetryKey] = useState(0);
 
   useEffect(() => {
     // Expo Router reuses this screen, so clear the previous provider on every new id
@@ -44,6 +46,7 @@ export default function ProviderProfileScreen() {
     setProvider(null);
     setCategoryName('');
     setLoading(true);
+    setError(false);
 
     async function fetchProvider() {
       if (!id) {
@@ -74,8 +77,9 @@ export default function ProviderProfileScreen() {
             setCategoryName(data.categoryId);
           }
         }
-      } catch (error) {
-        console.error('Failed to fetch provider:', error);
+      } catch (err) {
+        console.error('Failed to fetch provider:', err);
+        if (!cancelled) setError(true);
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -87,7 +91,11 @@ export default function ProviderProfileScreen() {
     return () => {
       cancelled = true;
     };
-  }, [id]);
+  }, [id, retryKey]);
+
+  const retryFetch = () => {
+    setRetryKey((current) => current + 1);
+  };
 
   // Return to wherever the user actually came from; Home if unknown
   const goBack = () => {
@@ -131,7 +139,18 @@ export default function ProviderProfileScreen() {
           </TouchableOpacity>
         </View>
         <View style={styles.emptyState}>
-          <ThemedText style={styles.emptyText}>Provider not found.</ThemedText>
+          {error ? (
+            <>
+              <ThemedText style={styles.emptyText}>
+                We couldn't load this provider. Please try again.
+              </ThemedText>
+              <TouchableOpacity onPress={retryFetch} activeOpacity={0.7} style={styles.retryButton}>
+                <ThemedText style={styles.retryText}>Retry</ThemedText>
+              </TouchableOpacity>
+            </>
+          ) : (
+            <ThemedText style={styles.emptyText}>Provider not found.</ThemedText>
+          )}
         </View>
       </SafeAreaView>
     );
@@ -228,6 +247,14 @@ const styles = StyleSheet.create({
   emptyText: {
     ...typography.body,
     color: colors.textTertiary,
+    textAlign: 'center',
+  },
+  retryButton: {
+    marginTop: spacing.md,
+  },
+  retryText: {
+    ...typography.bodyBold,
+    color: colors.primary,
   },
   profileTop: {
     alignItems: 'center',
